@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tug of War: Mathematics (Tarik Tambang Matematika)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #FFFFFF;
+            color: #212121;
+        }
+
+        .game-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            background-color: #FFFFFF;
+        }
+
+        .team-panel {
+            width: 30%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #FFFFFF;
+            z-index: 10;
+        }
+
+        .team-blue { border-right: 2px solid #E0E0E0; }
+        .team-red { border-left: 2px solid #E0E0E0; }
+
+        .arena-panel {
+            width: 40%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 8px;
+            background-color: #FFFFFF;
+            position: relative;
+        }
+
+        .team-header {
+            width: 100%;
+            text-align: center;
+            padding: 6px 10px;
+            border-radius: 10px;
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .bg-blue { background: linear-gradient(135deg, #1976D2, #0D47A1); }
+        .bg-red { background: linear-gradient(135deg, #E53935, #B71C1C); }
+
+        .question-card {
+            width: 100%;
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+            margin: 4px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 2px solid #E0E0E0;
+            transition: background-color 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .team-blue .question-card { border-color: #90CAF9; }
+        .team-red .question-card { border-color: #EF9A9A; }
+
+        @keyframes shakeError {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+            100% { transform: translateX(0); }
+        }
+
+        .question-card.shake-error {
+            animation: shakeError 0.5s ease-in-out;
+            border-color: #D32F2F !important;
+            background-color: #FFEBEE !important;
+        }
+
+        .wrong-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #D32F2F;
+            color: #FFFFFF;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 2px 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .question-card.shake-error .wrong-badge {
+            display: block;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #212121;
+        }
+
+        .answer-display {
+            font-size: 1.9rem;
+            font-weight: bold;
+            min-height: 40px;
+            margin-top: 2px;
+            border-bottom: 3px dashed #BDBDBD;
+            color: #0D47A1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-red .answer-display { color: #B71C1C; }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 260px;
+            margin-bottom: 4px;
+        }
+
+        .key-btn {
+            background: #F5F5F5;
+            border: 2px solid #E0E0E0;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 8px 0;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s, transform 0.05s;
+            touch-action: manipulation;
+        }
+
+        .key-btn:active { transform: scale(0.94); }
+        .team-blue .key-btn:active { background: #BBDEFB; }
+        .team-red .key-btn:active { background: #FFCDD2; }
+
+        .btn-del { background: #FFF3E0; color: #E65100; border-color: #FFE0B2; }
+        .btn-submit { background: #4CAF50; color: #FFFFFF; border-color: #388E3C; }
+        .btn-submit:active { background: #2E7D32 !important; }
+
+        .arena-header {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 4px;
+        }
+
+        .timer-display {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #D32F2F;
+            background: #FFEBEE;
+            padding: 4px 24px;
+            border-radius: 24px;
+            border: 2px solid #FFCDD2;
+            min-width: 120px;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+        #tugCanvas {
+            width: 100%;
+            height: 220px;
+            flex-grow: 1;
+            background-color: #FFFFFF;
+            border-radius: 12px;
+            margin: 6px 0;
+        }
+
+        .arena-footer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: #FFFFFF;
+            font-size: 0.95rem;
+            font-weight: bold;
+            padding: 6px 20px;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+
+        .action-btn:active { transform: scale(0.96); }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .modal-title { font-size: 2.0rem; font-weight: 900; margin-bottom: 6px; }
+        .text-blue { color: #1565C0; }
+        .text-red { color: #C62828; }
+        .text-draw { color: #F57F17; }
+
+        .modal-subtitle { font-size: 1.0rem; color: #555; margin-bottom: 12px; }
+
+        .option-group-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #78909C;
+            margin-top: 2px;
+        }
+
+        .pill-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .pill-btn {
+            background: #F5F5F5;
+            border: 2px solid #CFD8DC;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #455A64;
+            cursor: pointer;
+        }
+
+        .pill-btn.active {
+            background: #26A69A;
+            color: #FFFFFF;
+            border-color: #00897B;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 32px;
+            border: none;
+            border-radius: 26px;
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .start-btn:active { transform: scale(0.95); }
+
+        .score-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        .score-blue { background: #E3F2FD; color: #1565C0; }
+        .score-red { background: #FFEBEE; color: #C62828; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+
+    <!-- TIM BIRU -->
+    <div class="team-panel team-blue">
+        <div class="team-header bg-blue">
+            TIM BIRU (P1)
+            <div class="score-pill score-blue" id="scoreBlue">Skor: 0</div>
+        </div>
+
+        <div class="question-card" id="qCardBlue">
+            <div class="wrong-badge">❌ SALAH!</div>
+            <div class="question-text" id="qBlue">? + ?</div>
+            <div class="answer-display" id="ansBlue"></div>
+        </div>
+
+        <div class="keypad-grid" id="keypadBlue">
+            <button class="key-btn" data-val="7">7</button>
+            <button class="key-btn" data-val="8">8</button>
+            <button class="key-btn" data-val="9">9</button>
+            <button class="key-btn" data-val="4">4</button>
+            <button class="key-btn" data-val="5">5</button>
+            <button class="key-btn" data-val="6">6</button>
+            <button class="key-btn" data-val="1">1</button>
+            <button class="key-btn" data-val="2">2</button>
+            <button class="key-btn" data-val="3">3</button>
+            <button class="key-btn btn-del" data-val="DEL">⌫</button>
+            <button class="key-btn" data-val="0">0</button>
+            <button class="key-btn btn-submit" data-val="OK">✓</button>
+        </div>
+    </div>
+
+    <!-- ARENA -->
+    <div class="arena-panel">
+        <div class="arena-header">
+            <div class="timer-display" id="timerDisplay">01:00</div>
+        </div>
+
+        <canvas id="tugCanvas"></canvas>
+
+        <div class="arena-footer">
+            <button class="action-btn" id="restartBtn">Pengaturan / Ulang</button>
+        </div>
+
+        <!-- OVERLAY MODAL -->
+        <div class="modal-overlay" id="gameModal">
+            <div class="modal-title text-blue" id="modalTitle">Tug of War: Math</div>
+            <div class="modal-subtitle" id="modalSub">Pilih Tingkat Soal & Durasi untuk Mulai!</div>
+
+            <div class="option-group-label">RENTANG ANGKA SOAL:</div>
+            <div class="pill-group" id="rangeSelectGroupModal">
+                <button class="pill-btn active" data-range="10">1 - 10 (Mudah)</button>
+                <button class="pill-btn" data-range="20">1 - 20 (Sedang)</button>
+                <button class="pill-btn" data-range="50">1 - 50 (Tantangan)</button>
+            </div>
+
+            <div class="option-group-label" style="margin-top: 8px;">DURASI WAKTU:</div>
+            <div class="pill-group" id="timerSelectGroupModal">
+                <button class="pill-btn" data-time="30">30 Detik</button>
+                <button class="pill-btn active" data-time="60">60 Detik</button>
+                <button class="pill-btn" data-time="90">90 Detik</button>
+                <button class="pill-btn" data-time="0">Bebas</button>
+            </div>
+
+            <button class="start-btn" id="modalStartBtn">Mulai Main</button>
+        </div>
+    </div>
+
+    <!-- TIM MERAH -->
+    <div class="team-panel team-red">
+        <div class="team-header bg-red">
+            TIM MERAH (P2)
+            <div class="score-pill score-red" id="scoreRed">Skor: 0</div>
+        </div>
+
+        <div class="question-card" id="qCardRed">
+            <div class="wrong-badge">❌ SALAH!</div>
+            <div class="question-text" id="qRed">? + ?</div>
+            <div class="answer-display" id="ansRed"></div>
+        </div>
+
+        <div class="keypad-grid" id="keypadRed">
+            <button class="key-btn" data-val="7">7</button>
+            <button class="key-btn" data-val="8">8</button>
+            <button class="key-btn" data-val="9">9</button>
+            <button class="key-btn" data-val="4">4</button>
+            <button class="key-btn" data-val="5">5</button>
+            <button class="key-btn" data-val="6">6</button>
+            <button class="key-btn" data-val="1">1</button>
+            <button class="key-btn" data-val="2">2</button>
+            <button class="key-btn" data-val="3">3</button>
+            <button class="key-btn btn-del" data-val="DEL">⌫</button>
+            <button class="key-btn" data-val="0">0</button>
+            <button class="key-btn btn-submit" data-val="OK">✓</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    class SoundEffects {
+        constructor() {
+            this.ctx = null;
+            this.wrongAudio = new Audio('wrong_answer.mp3');
+            this.wrongAudio.preload = 'auto';
+            this.correctAudio = new Audio('correct_answer.mp3');
+            this.correctAudio.preload = 'auto';
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) this.ctx = new AudioCtx();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        playTap() {
+            if (!this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        playCorrect() {
+            try {
+                this.correctAudio.currentTime = 0;
+                const p = this.correctAudio.play();
+                if (p !== undefined) {
+                    p.catch(() => this.playSynthCorrect());
+                }
+            } catch(e) {
+                this.playSynthCorrect();
+            }
+        }
+
+        playSynthCorrect() {
+            if (!this.ctx) return;
+            try {
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                osc.frequency.setValueAtTime(1046.50, now + 0.24);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(now + 0.35);
+            } catch(e) {}
+        }
+
+        playWrong() {
+            try {
+                this.wrongAudio.currentTime = 0;
+                const p = this.wrongAudio.play();
+                if (p !== undefined) {
+                    p.catch(() => this.playSynthWrong());
+                }
+            } catch(e) {
+                this.playSynthWrong();
+            }
+        }
+
+        playSynthWrong() {
+            if (!this.ctx) return;
+            try {
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(now + 0.3);
+            } catch(e) {}
+        }
+
+        playWin() {
+            if (!this.ctx) return;
+            try {
+                const notes = [440, 554.37, 659.25, 880, 659.25, 880];
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + (idx * 0.12);
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(now); osc.stop(now + 0.2);
+                });
+            } catch(e) {}
+        }
+    }
+
+    const sound = new SoundEffects();
+
+    const MAX_PULL = 6.5;
+    let selectedDuration = 60;
+    let selectedRange = 10;
+    let timeRemaining = 60;
+    let timerInterval = null;
+    let isGameRunning = false;
+
+    let ropePosition = 0;
+    let targetRopePos = 0;
+
+    let blueScore = 0;
+    let redScore = 0;
+
+    let currentQBlue = { text: '', ans: 0 };
+    let currentQRed = { text: '', ans: 0 };
+
+    let inputBlue = '';
+    let inputRed = '';
+
+    let confetti = [];
+
+    const canvas = document.getElementById('tugCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width > 0 ? rect.width : window.innerWidth * 0.38;
+        canvas.height = rect.height > 0 ? rect.height : window.innerHeight * 0.6;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function generateQuestion() {
+        const isAddition = Math.random() < 0.5;
+        let a, b, text, ans;
+
+        if (isAddition) {
+            a = Math.floor(Math.random() * selectedRange) + 1;
+            b = Math.floor(Math.random() * selectedRange) + 1;
+            text = `${a} + ${b}`;
+            ans = a + b;
+        } else {
+            a = Math.floor(Math.random() * (selectedRange - 1)) + 2;
+            b = Math.floor(Math.random() * (a - 1)) + 1;
+            text = `${a} - ${b}`;
+            ans = a - b;
+        }
+        return { text, ans };
+    }
+
+    function initQuestions() {
+        currentQBlue = generateQuestion();
+        currentQRed = generateQuestion();
+        inputBlue = '';
+        inputRed = '';
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('qBlue').textContent = currentQBlue.text;
+        document.getElementById('qRed').textContent = currentQRed.text;
+
+        document.getElementById('ansBlue').textContent = inputBlue;
+        document.getElementById('ansRed').textContent = inputRed;
+
+        document.getElementById('scoreBlue').textContent = `Skor: ${blueScore}`;
+        document.getElementById('scoreRed').textContent = `Skor: ${redScore}`;
+    }
+
+    function triggerWrongEffect(cardId) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.classList.remove('shake-error');
+        void card.offsetWidth;
+        card.classList.add('shake-error');
+        setTimeout(() => {
+            card.classList.remove('shake-error');
+        }, 600);
+    }
+
+    function setupKeypads() {
+        const handleKey = (team, val) => {
+            sound.init();
+            if (!isGameRunning) return;
+
+            if (val !== 'OK') {
+                sound.playTap();
+            }
+
+            if (team === 'blue') {
+                if (val === 'DEL') {
+                    inputBlue = inputBlue.slice(0, -1);
+                } else if (val === 'OK') {
+                    checkAnswer('blue');
+                } else if (inputBlue.length < 3) {
+                    inputBlue += val;
+                }
+            } else {
+                if (val === 'DEL') {
+                    inputRed = inputRed.slice(0, -1);
+                } else if (val === 'OK') {
+                    checkAnswer('red');
+                } else if (inputRed.length < 3) {
+                    inputRed += val;
+                }
+            }
+            updateUI();
+        };
+
+        const attachTouchListener = (containerId, team) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const buttons = container.querySelectorAll('.key-btn');
+
+            buttons.forEach(btn => {
+                const triggerAction = (e) => {
+                    e.preventDefault();
+                    const val = btn.getAttribute('data-val');
+                    handleKey(team, val);
+                };
+                
+                btn.addEventListener('touchstart', triggerAction, { passive: false });
+                btn.addEventListener('click', (e) => {
+                    if (!('ontouchstart' in window)) {
+                        triggerAction(e);
+                    }
+                });
+            });
+        };
+
+        attachTouchListener('keypadBlue', 'blue');
+        attachTouchListener('keypadRed', 'red');
+    }
+
+    function checkAnswer(team) {
+        if (team === 'blue') {
+            const userAns = parseInt(inputBlue, 10);
+            if (userAns === currentQBlue.ans) {
+                sound.playCorrect();
+                blueScore++;
+                targetRopePos -= 1;
+                currentQBlue = generateQuestion();
+            } else {
+                sound.playWrong();
+                triggerWrongEffect('qCardBlue');
+                targetRopePos = Math.min(MAX_PULL, targetRopePos + 0.3);
+            }
+            inputBlue = '';
+        } else {
+            const userAns = parseInt(inputRed, 10);
+            if (userAns === currentQRed.ans) {
+                sound.playCorrect();
+                redScore++;
+                targetRopePos += 1;
+                currentQRed = generateQuestion();
+            } else {
+                sound.playWrong();
+                triggerWrongEffect('qCardRed');
+                targetRopePos = Math.max(-MAX_PULL, targetRopePos - 0.3);
+            }
+            inputRed = '';
+        }
+
+        if (targetRopePos <= -MAX_PULL) {
+            targetRopePos = -MAX_PULL;
+            endGame('blue');
+        } else if (targetRopePos >= MAX_PULL) {
+            targetRopePos = MAX_PULL;
+            endGame('red');
+        }
+    }
+
+    function formatTime(seconds) {
+        if (seconds === Infinity || seconds === 0) return 'Bebas';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        if (selectedDuration === 0) {
+            document.getElementById('timerDisplay').textContent = 'Bebas';
+            return;
+        }
+
+        timeRemaining = selectedDuration;
+        document.getElementById('timerDisplay').textContent = formatTime(timeRemaining);
+
+        timerInterval = setInterval(() => {
+            if (!isGameRunning) return;
+            timeRemaining--;
+            document.getElementById('timerDisplay').textContent = formatTime(timeRemaining);
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                if (targetRopePos < 0) {
+                    endGame('blue');
+                } else if (targetRopePos > 0) {
+                    endGame('red');
+                } else {
+                    endGame('draw');
+                }
+            }
+        }, 1000);
+    }
+
+    document.querySelectorAll('#rangeSelectGroupModal .pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            sound.init(); sound.playTap();
+            document.querySelectorAll('#rangeSelectGroupModal .pill-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedRange = parseInt(btn.getAttribute('data-range'), 10);
+        });
+    });
+
+    document.querySelectorAll('#timerSelectGroupModal .pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            sound.init(); sound.playTap();
+            document.querySelectorAll('#timerSelectGroupModal .pill-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedDuration = parseInt(btn.getAttribute('data-time'), 10);
+        });
+    });
+
+    function startGame() {
+        sound.init();
+        ropePosition = 0;
+        targetRopePos = 0;
+        blueScore = 0;
+        redScore = 0;
+        confetti = [];
+        isGameRunning = true;
+
+        initQuestions();
+        startTimer();
+
+        document.getElementById('gameModal').style.display = 'none';
+    }
+
+    function endGame(winner) {
+        isGameRunning = false;
+        clearInterval(timerInterval);
+        sound.playWin();
+
+        const modal = document.getElementById('gameModal');
+        const title = document.getElementById('modalTitle');
+        const sub = document.getElementById('modalSub');
+        const btn = document.getElementById('modalStartBtn');
+
+        modal.style.display = 'flex';
+
+        if (winner === 'blue') {
+            title.textContent = 'TIM BIRU MENANG! 🎉';
+            title.className = 'modal-title text-blue';
+            sub.textContent = `Tim Biru berhasil menarik tali lebih jauh! (Skor: ${blueScore})`;
+        } else if (winner === 'red') {
+            title.textContent = 'TIM MERAH MENANG! 🎉';
+            title.className = 'modal-title text-red';
+            sub.textContent = `Tim Merah berhasil menarik tali lebih jauh! (Skor: ${redScore})`;
+        } else {
+            title.textContent = 'HASIL SERI (DRAW)! 🤝';
+            title.className = 'modal-title text-draw';
+            sub.textContent = `Kedua tim sama-sama kuat! (Skor Biru: ${blueScore} | Skor Merah: ${redScore})`;
+        }
+
+        btn.textContent = 'Main Lagi';
+        spawnConfetti();
+    }
+
+    document.getElementById('modalStartBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', () => {
+        sound.init();
+        sound.playTap();
+        document.getElementById('gameModal').style.display = 'flex';
+        document.getElementById('modalTitle').textContent = 'Pengaturan Game';
+        document.getElementById('modalTitle').className = 'modal-title text-blue';
+        document.getElementById('modalSub').textContent = 'Pilih Rentang Angka & Durasi!';
+        document.getElementById('modalStartBtn').textContent = 'Mulai Main';
+        isGameRunning = false;
+        clearInterval(timerInterval);
+    });
+
+    function spawnConfetti() {
+        confetti = [];
+        const colors = ['#2196F3', '#F44336', '#4CAF50', '#FFEB3B', '#9C27B0', '#FF9800'];
+        for (let i = 0; i < 90; i++) {
+            confetti.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * (canvas.height / 2),
+                vx: (Math.random() - 0.5) * 6,
+                vy: Math.random() * 4 + 2,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                vRot: (Math.random() - 0.5) * 10
+            });
+        }
+    }
+
+    const imgBlue = new Image();
+    imgBlue.src = 'blue_team.png';
+
+    const imgRed = new Image();
+    imgRed.src = 'red_team.png';
+
+    const imgRibbon = new Image();
+    imgRibbon.src = 'center_ribbon.png';
+
+    function renderCanvas() {
+        resizeCanvas();
+
+        const w = canvas.width || 300;
+        const h = canvas.height || 200;
+        const centerY = h * 0.55;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+
+        ropePosition += (targetRopePos - ropePosition) * 0.18;
+
+        const centerX = w / 2;
+        const maxShiftPx = w * 0.30;
+        const offsetPx = (ropePosition / MAX_PULL) * maxShiftPx;
+        const ropeCenterX = centerX + offsetPx;
+
+        // Ground shadow
+        ctx.strokeStyle = '#ECEFF1';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(10, centerY + h * 0.32);
+        ctx.lineTo(w - 10, centerY + h * 0.32);
+        ctx.stroke();
+
+        // Center dashed marker line
+        ctx.strokeStyle = '#B0BEC5';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - h * 0.35);
+        ctx.lineTo(centerX, centerY + h * 0.35);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Rope
+        ctx.strokeStyle = '#8D6E63';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(ropeCenterX - w * 0.45, centerY);
+        ctx.lineTo(ropeCenterX + w * 0.45, centerY);
+        ctx.stroke();
+
+        const teamHeight = h * 0.52;
+
+        // Render Blue Team (Left)
+        if (imgBlue.complete && imgBlue.naturalWidth > 0) {
+            const blueWidth = teamHeight * (imgBlue.naturalWidth / imgBlue.naturalHeight);
+            ctx.drawImage(imgBlue, ropeCenterX - blueWidth, centerY - teamHeight * 0.5, blueWidth, teamHeight);
+        }
+
+        // Render Red Team (Right)
+        if (imgRed.complete && imgRed.naturalWidth > 0) {
+            const redWidth = teamHeight * (imgRed.naturalWidth / imgRed.naturalHeight);
+            ctx.drawImage(imgRed, ropeCenterX, centerY - teamHeight * 0.5, redWidth, teamHeight);
+        }
+
+        // Render Center Ribbon
+        if (imgRibbon.complete && imgRibbon.naturalWidth > 0) {
+            const ribbonHeight = teamHeight * 0.50;
+            const ribbonWidth = ribbonHeight * (imgRibbon.naturalWidth / imgRibbon.naturalHeight);
+            ctx.drawImage(imgRibbon, ropeCenterX - ribbonWidth / 2, centerY - ribbonHeight * 0.35, ribbonWidth, ribbonHeight);
+        }
+
+        if (confetti.length > 0) {
+            confetti.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.vRot;
+            });
+
+            confetti = confetti.filter(p => p.y < h + 20);
+        }
+
+        requestAnimationFrame(renderCanvas);
+    }
+
+    window.addEventListener('load', () => {
+        setupKeypads();
+        initQuestions();
+        renderCanvas();
+    });
+</script>
+
+</body>
+</html>

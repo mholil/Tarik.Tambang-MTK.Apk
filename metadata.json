@@ -1,0 +1,6 @@
+{
+  "name": "Tug of War Math",
+  "description": "Game edukasi interaktif 2 pemain Tarik Tambang Matematika (Tug of War: Mathematics).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
